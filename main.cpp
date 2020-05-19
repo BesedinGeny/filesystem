@@ -39,6 +39,7 @@ int empty_pages = MS;
 
 
 bool AddFile(){
+  system("clear");
   int file_ind = cur_index++;
   cout << "Enter the memory(bytes) of file: ";
   int mem;
@@ -64,6 +65,7 @@ bool AddFile(){
 }
 
 void Display(){
+  system("clear");
   cout << "Current memory stash:\n";
 
   for(int i = 0 ; i < MS; i++){
@@ -77,10 +79,14 @@ cout << endl;
 cout << "Current files in stash:\n";
 for( map<int, MFILE>::iterator it = files.begin(); it != files.end(); it++ )
   cout << it->first << ") " << it->second.name << " ( memory needed: " << it->second.memory << ")\n";
+  cout << "Enter any char to continue";
+  char s = '1';
+  cin >> s;
 cout << endl << endl;
 }
 
 void ShowPagesOfFile(int index){
+  system("clear");
   map<int, vector<int> > :: iterator it;
   it = file_mem.find(index);
   if (it == file_mem.end()) {
@@ -108,17 +114,25 @@ void ShowPagesOfFile(int index){
     
 
   }
+  cout << "\nEnter any char to continue";
+  char s = '1';
+  cin >> s;
   cout << endl << endl;
+
 }
 
 bool DeleteFile(int index){
+  system("clear");
   map<int, vector<int> > :: iterator it;
   it = file_mem.find(index);
   if (it == file_mem.end()) {
     cout << "File not found\n";
     return false;
   }
+  files[index].memory += files[index].memory % Size_of_page ? Size_of_page : 0;
+  empty_pages += files[index].memory / Size_of_page;
   int cur_ind = 0; 
+  
   for(int i = 0 ; i < MS; i++)
   {
     if( cur_ind < it->second.size() && i == it->second[cur_ind]){
@@ -130,20 +144,42 @@ bool DeleteFile(int index){
   file_mem.erase(index); 
   files.erase(index);
   cout << "File " << f.name << "successfuly deleted from memory\n"; 
+
   return true;
 }
 
 int main(){
-  //cout << "hw";
-  AddFile();
-  Display();
-  //ShowPagesOfFile(0);
-  AddFile();
-  Display();
-  DeleteFile(0);
-  Display();
-  //ShowPagesOfFile(1);
-  AddFile();
-  ShowPagesOfFile(2);
+  
+  bool exit = false;
+  do {
+    int ind = 0;
+    system("clear");
+    cout << "MAIN MENU:\n";
+    cout << "Free memory: " << empty_pages * Size_of_page << " from " << MS * Size_of_page << endl;
+    cout << "1. Add file\n2. Delete file\n3. Find in storage file\n4. Show status\n5. Exit\n";
+    cout << "Input number of comand to continue"; 
+    int comand = -1;
+    cin >> comand;
+    switch(comand){
+      case 1:
+      AddFile();
+      break;
+      case 2:
+      cout << "Input index of file to delete: ";
+      cin >> ind;
+      DeleteFile(ind);
+      break;
+      case 3:
+      cout << "Input index of file to find: ";
+      cin >> ind;
+      ShowPagesOfFile(ind);
+      break;
+      case 4: Display();break;
+      case 5: 
+      cout << "exiting..";
+      exit = true;
+      break; 
+    } 
+  } while (!exit);
   return 0;
 }
