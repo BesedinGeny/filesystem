@@ -12,7 +12,11 @@ class MFILE{
 public:
   int memory = 0;
   string name  = "";
+  bool can_be_changed = true;
 public:
+MFILE ( int mem1, string name1, bool f){
+    memory = mem1; name = name1; can_be_changed = f;
+  }
   MFILE ( int mem1, string name1){
     memory = mem1; name = name1;
   }
@@ -148,6 +152,56 @@ bool DeleteFile(int index){
   return true;
 }
 
+
+bool ChangeFile(int ID){
+  system("clear");
+  map<int, vector<int> > :: iterator it;
+  it = file_mem.find(ID);
+  if (it == file_mem.end() || !files[ID].can_be_changed) {
+    cout << "File not found or cant be modified\n";
+    return false;
+  }
+  int ns = 0;
+  cout << "Enter new size of this file: ";
+  cin >> ns;
+  int tmp = ns;
+  if (ns < 0) ns = 0;
+  if (ns & Size_of_page) ns += Size_of_page;
+  ns /= Size_of_page;
+  
+  int delta = ns - file_mem[ID].size();
+  if (delta > empty_pages)
+    {
+      cout << "There is no enouth memory to change";
+      return false;
+    }
+  
+  files[ID].memory = tmp;
+  empty_pages -= delta;
+  if (delta <= 0)
+  while (delta < 0){
+    
+    int cur_pg = file_mem[ID][file_mem[ID].size() - 1];
+    //cout << "DEBUG " << delta << " " <<cur_pg << endl;;
+    pages[cur_pg] = 0;
+    file_mem[ID].pop_back();
+    delta++;
+  }
+  else{
+    for(int i = 0; i < MS && delta; i++){
+      if (!pages[i]){
+        file_mem[ID].push_back(i);
+        pages[i] = 1;
+        delta--;
+      }
+    }
+  }  
+  char c;
+  cout << "\nEnter any char to continue";
+  cin >> c;
+  return true;
+}
+
 int main(){
   
   bool exit = false;
@@ -156,7 +210,7 @@ int main(){
     system("clear");
     cout << "MAIN MENU:\n";
     cout << "Free memory: " << empty_pages * Size_of_page << " from " << MS * Size_of_page << endl;
-    cout << "1. Add file\n2. Delete file\n3. Find in storage file\n4. Show status\n5. Exit\n";
+    cout << "1. Add file\n2. Delete file\n3. Find in storage file\n4. Show status\n5. Change File\n6. Exit\n";
     cout << "Input number of comand to continue"; 
     int comand = -1;
     cin >> comand;
@@ -175,7 +229,8 @@ int main(){
       ShowPagesOfFile(ind);
       break;
       case 4: Display();break;
-      case 5: 
+      case 5: cout << "Input index of file to change: "; cin >> ind; ChangeFile(ind); break;
+      case 6: 
       cout << "exiting..";
       exit = true;
       break; 
