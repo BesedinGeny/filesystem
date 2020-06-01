@@ -13,12 +13,19 @@ public:
   int memory = 0;
   string name  = "";
   bool can_be_changed = true;
+  bool is_folder = false;
+  vector <int> fls; // if folder contains files 
+  int id_parent = -1; // to go back
+  int ID = -1;
 public:
-MFILE ( int mem1, string name1, bool f){
+/*MFILE ( int mem1, string name1, bool f){
     memory = mem1; name = name1; can_be_changed = f;
-  }
+  }*/
   MFILE ( int mem1, string name1){
     memory = mem1; name = name1;
+  }
+  MFILE ( int mem1, string name1, int index){
+    memory = mem1; name = name1, ID = index;
   }
   MFILE ( ){
     memory = 0; name = "";
@@ -26,23 +33,27 @@ MFILE ( int mem1, string name1, bool f){
 
 };
 
+
 bool operator<(const MFILE &f1, const MFILE &f2 ){
   return f1.name < f2.name;
 }
+
+
+
 
 /* Variables */
 map<int, MFILE> files; // храним информацию о файле
 map<int, vector<int> > file_mem; // храним страницы памяти
 vector<int> pages(MS, 0);
-unsigned int cur_index = 0;
+unsigned int cur_index = 1;
 int empty_pages = MS;
-
+int NOW_POS = 0;
 // массив страниц
 // изначально пустые. считаем, что страница вмещает 512 бит
 // файл занимает страницу полностью, даже если ему столько не надо
 
 
-bool AddFile(){
+bool AddFile(int index){
   system("clear");
   int file_ind = cur_index++;
   cout << "Enter the memory(bytes) of file: ";
@@ -51,12 +62,16 @@ bool AddFile(){
   cout << "Enter name of file: ";
   string name1;
   cin >> name1;
-  MFILE *nf = new MFILE(mem, name1);
+
+  /* Срздание и занимание памяти */
+  MFILE *nf = new MFILE(mem, name1, file_ind);
+  
   if (mem % Size_of_page) mem+= Size_of_page;
   mem /= Size_of_page;  // округление вверх
                         // mem - pages for now
   if (mem > empty_pages) {cur_index--;
                           return false;} // cant add that file
+  
   empty_pages -= mem;
   files[file_ind] = *nf;
   for(int i = 0; i < MS && mem; i++)
@@ -65,6 +80,17 @@ bool AddFile(){
       file_mem[file_ind].push_back(i);
       mem--;
     }
+
+  /* Память выделилась */
+  map<int, MFILE > :: iterator it;
+  it = files.find(index);
+  it->second.fls.push_back(file_ind);
+  //MFILE p = files[index];
+  cout << "parents name " << it->second.name << endl;
+  char r;
+  
+  //p.fls.push_back(file_ind);
+  cin >> r; 
   return true;
 }
 
@@ -88,6 +114,7 @@ for( map<int, MFILE>::iterator it = files.begin(); it != files.end(); it++ )
   cin >> s;
 cout << endl << endl;
 }
+
 
 void ShowPagesOfFile(int index){
   system("clear");
@@ -125,13 +152,55 @@ void ShowPagesOfFile(int index){
 
 }
 
+void CreateFolder(int index){
+  system("clear");
+  int file_ind = cur_index++;
+  cout << "Enter name of folder: ";
+  string name1;
+  cin >> name1;
+  MFILE *nf = new MFILE(0, name1, file_ind);
+  nf->is_folder = true;
+  files[file_ind] = *nf;
+  if (!index){ return ;}
+  nf->id_parent = index;
+  
+  map<int, MFILE > :: iterator it;
+  it = files.find(index);
+  it->second.fls.push_back(file_ind);
+}
+
+void DisplayFolder(int index){
+  MFILE fil = files[index];
+  cout << "Folder " <<  fil.name << endl;
+  if (!fil.fls.size()) {
+    cout << "empty...\n"; return;
+  }
+  for (int i = 0; i < fil.fls.size(); i++)
+  {
+    MFILE f = files[fil.fls[i]];
+    if (f.is_folder)
+      cout << "\tdir>";
+    else
+      cout << "\tfile>";
+    cout << f.name << "(" << f.ID << ")\n";
+  }
+}
+
 bool DeleteFile(int index){
   system("clear");
-  map<int, vector<int> > :: iterator it;
+  map<int, vector<int>> :: iterator it;
   it = file_mem.find(index);
   if (it == file_mem.end()) {
     cout << "File not found\n";
     return false;
+  }
+  MFILE fil = files[index];
+  if (fil.is_folder){
+    for (int i = 0 ; i < fil.fls.size(); i++)
+      DeleteFile(fil.fls[i]);
+    file_mem.erase(index); 
+    files.erase(index);
+    return true;
   }
   files[index].memory += files[index].memory % Size_of_page ? Size_of_page : 0;
   empty_pages += files[index].memory / Size_of_page;
@@ -150,6 +219,16 @@ bool DeleteFile(int index){
   cout << "File " << f.name << "successfuly deleted from memory\n"; 
 
   return true;
+}
+
+void GoToFolder(int index){
+  map<int, MFILE> :: iterator it;
+  it = files.find(index);
+  if (it == files.end()) {
+    cout << "Folder not found\n";
+    return ;
+  }
+  NOW_POS = index;
 }
 
 
@@ -204,7 +283,7 @@ bool ChangeFile(int ID){
 
 int main(){
   
-  bool exit = false;
+  /*bool exit = false;
   do {
     int ind = 0;
     system("clear");
@@ -235,6 +314,16 @@ int main(){
       exit = true;
       break; 
     } 
-  } while (!exit);
+  } while (!exit);*/
+
+  CreateFolder(0);
+  DisplayFolder(1);
+  AddFile(1);
+  CreateFolder(1);
+  //Display();
+  
+  DisplayFolder(1);
+  //DisplayFolder(0);
+  cout << files[1].fls.size();
   return 0;
 }
