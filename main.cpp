@@ -273,6 +273,7 @@ void HelpPage(){
   cout << "del or chng- to delete or change file or folder(by index)\n\t";
   cout << "sh - to see whole info about file(by index)\n\t";
   cout << "crFld - to create new folder\n\tcrFl - to create new file\n\t";
+  cout << "rel - to relocate file or folder(index of file, then index of folder)\n\t";
   cout << "cls - clear screen\n\tquit - close program\n";
 
 }
@@ -330,6 +331,29 @@ bool ChangeFile(int ID){
   return true;
 }
 
+void Relocate(int index, int folder){
+  map<int, MFILE> :: iterator it;
+  it = files.find(folder);
+  if (it == files.end() || !it->second.is_folder) {
+    cout << "Folder not found or its unavailebale\n";
+    return;
+  }
+  it = files.find(index);
+  if (it == files.end()) {
+    cout << "File not found\n";
+    return;
+  }
+  
+  map<int, MFILE> :: iterator it2;
+  it2 = files.find(it->second.id_parent);
+  for(int i = 0 ;i < it2->second.fls.size(); i++){
+    if (it2->second.fls[i] == index) it2->second.fls.erase(it2->second.fls.begin() + i);
+  }
+  it->second.id_parent = folder;
+  it2 = files.find(folder);
+  it2->second.fls.push_back(index);
+  }
+
 int main(){
   
   /*bool exit = false;
@@ -371,7 +395,7 @@ int main(){
   nf->is_folder = true;
   nf->id_parent = 0;
   files[0] = *nf;
-
+  int tmp = -1;
   string command = "";
   while (command != "quit"){
     cout << "command>>";
@@ -422,6 +446,12 @@ int main(){
       if (f) ShowPagesOfFile(ind);
       else ShowPagesOfFile(-1);
       }
+    else if (cmd == "rel"){
+      cout << " input new location of file: ";
+      cin >> tmp;
+      if (tmp < 0) {cout << "Uncorrect place\n"; break;}
+      Relocate(ind, tmp);
+    }
     else if (cmd == "crFld") {CreateFolder(NOW_POS);}
     else if (cmd == "crFl") {AddFile(NOW_POS);}
     else if (cmd == "help") {HelpPage();}
