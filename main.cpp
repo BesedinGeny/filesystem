@@ -2,6 +2,7 @@
 #include <map>
 #include <vector>
 #include <algorithm>
+#include <sstream>
 using namespace std;
 /* Consts */
 const int MS = 100;
@@ -54,7 +55,7 @@ int NOW_POS = 0;
 
 
 bool AddFile(int index){
-  system("clear");
+  //system("clear");
   int file_ind = cur_index++;
   cout << "Enter the memory(bytes) of file: ";
   int mem;
@@ -65,7 +66,7 @@ bool AddFile(int index){
 
   /* Срздание и занимание памяти */
   MFILE *nf = new MFILE(mem, name1, file_ind);
-  
+  nf->id_parent = index;
   if (mem % Size_of_page) mem+= Size_of_page;
   mem /= Size_of_page;  // округление вверх
                         // mem - pages for now
@@ -86,16 +87,14 @@ bool AddFile(int index){
   it = files.find(index);
   it->second.fls.push_back(file_ind);
   //MFILE p = files[index];
-  cout << "parents name " << it->second.name << endl;
-  char r;
+  
   
   //p.fls.push_back(file_ind);
-  cin >> r; 
   return true;
 }
 
 void Display(){
-  system("clear");
+  //system("clear");
   cout << "Current memory stash:\n";
 
   for(int i = 0 ; i < MS; i++){
@@ -108,6 +107,7 @@ void Display(){
 cout << endl;
 cout << "Current files in stash:\n";
 for( map<int, MFILE>::iterator it = files.begin(); it != files.end(); it++ )
+  if (!it->second.is_folder) 
   cout << it->first << ") " << it->second.name << " ( memory needed: " << it->second.memory << ")\n";
   cout << "Enter any char to continue";
   char s = '1';
@@ -153,28 +153,39 @@ void ShowPagesOfFile(int index){
 }
 
 void CreateFolder(int index){
-  system("clear");
+  //system("clear");
   int file_ind = cur_index++;
   cout << "Enter name of folder: ";
   string name1;
   cin >> name1;
   MFILE *nf = new MFILE(0, name1, file_ind);
   nf->is_folder = true;
-  files[file_ind] = *nf;
-  if (!index){ return ;}
   nf->id_parent = index;
+  files[file_ind] = *nf;
+  vector<int> n(0);
+  file_mem[file_ind] = n;
+  //if (!index){ return ;}
+ 
   
   map<int, MFILE > :: iterator it;
   it = files.find(index);
   it->second.fls.push_back(file_ind);
+  //cout << it->second.fls.size();
 }
 
 void DisplayFolder(int index){
   MFILE fil = files[index];
-  cout << "Folder " <<  fil.name << endl;
+  //if (!index) cout << "Folder root" << endl;
+  //else {
+    cout << "Folder " <<  fil.name << endl;
+    //if (!index)
+    cout << "\t..>(" << fil.id_parent << ")\n";
+ //}
+  
   if (!fil.fls.size()) {
     cout << "empty...\n"; return;
   }
+
   for (int i = 0; i < fil.fls.size(); i++)
   {
     MFILE f = files[fil.fls[i]];
@@ -187,18 +198,30 @@ void DisplayFolder(int index){
 }
 
 bool DeleteFile(int index){
-  system("clear");
+  //system("clear");
   map<int, vector<int>> :: iterator it;
   it = file_mem.find(index);
   if (it == file_mem.end()) {
     cout << "File not found\n";
     return false;
   }
-  MFILE fil = files[index];
-  if (fil.is_folder){
-    for (int i = 0 ; i < fil.fls.size(); i++)
-      DeleteFile(fil.fls[i]);
+  map<int, MFILE > :: iterator it1;
+  it1 = files.find(index);
+  map<int, MFILE> :: iterator it2;
+  it2 = files.find(it1->second.id_parent);
+  //MFILE fil = files[index];
+  if (it1->second.is_folder){
+    for (int i = 0 ; i < it1->second.fls.size(); i++)
+      DeleteFile(it1->second.fls[i--]);
     file_mem.erase(index); 
+    
+    
+    for(int i = 0; i < it2->second.fls.size(); i++){
+      if (it2->second.fls[i] == index) {it2->second.fls.erase(it2->second.fls.begin() + i);
+      
+       break;}
+    }
+
     files.erase(index);
     return true;
   }
@@ -215,7 +238,18 @@ bool DeleteFile(int index){
   }
   MFILE f = files[index];
   file_mem.erase(index); 
+  //files.erase(index);
+  
+    
+    //map<int, MFILE> :: iterator it2;
+    //it2 = files.find(it1->second.id_parent);
+    
+    for(int i = 0; i < it2->second.fls.size(); i++){
+
+      if (it2->second.fls[i] == index) {it2->second.fls.erase(it2->second.fls.begin() + i); break;}
+    }
   files.erase(index);
+  
   cout << "File " << f.name << "successfuly deleted from memory\n"; 
 
   return true;
@@ -232,12 +266,27 @@ void GoToFolder(int index){
 }
 
 
+void HelpPage(){
+  cout << "There are commands:\n\tls - to watch current directory\n\t";
+  cout << "help - for show this menu\n\t";
+  cout << "cd - to enter some directory(by index)\n\tdisp - watch all files and memory status\n\t";
+  cout << "del or chng- to delete or change file or folder(by index)\n\t";
+  cout << "sh - to see whole info about file(by index)\n\t";
+  cout << "crFld - to create new folder\n\tcrFl - to create new file\n\t";
+  cout << "cls - clear screen\n\tquit - close program\n";
+
+}
+
 bool ChangeFile(int ID){
-  system("clear");
+  //system("clear");
   map<int, vector<int> > :: iterator it;
   it = file_mem.find(ID);
   if (it == file_mem.end() || !files[ID].can_be_changed) {
     cout << "File not found or cant be modified\n";
+    return false;
+  }
+  if (files[ID].is_folder){
+    cout << "folder cannot be changed\n";
     return false;
   }
   int ns = 0;
@@ -315,15 +364,71 @@ int main(){
       break; 
     } 
   } while (!exit);*/
+  system("clear");
+  HelpPage();
 
-  CreateFolder(0);
-  DisplayFolder(1);
-  AddFile(1);
-  CreateFolder(1);
-  //Display();
-  
-  DisplayFolder(1);
-  //DisplayFolder(0);
-  cout << files[1].fls.size();
+  MFILE *nf = new MFILE(0, "_root", 0);
+  nf->is_folder = true;
+  nf->id_parent = 0;
+  files[0] = *nf;
+
+  string command = "";
+  while (command != "quit"){
+    cout << "command>>";
+    getline(cin, command);
+    stringstream iss(command);
+    string cmd; int ind = -1;
+    iss >> cmd >> ind;
+    command = cmd;
+    if (cmd == "ls"){
+      DisplayFolder(NOW_POS);
+    }
+    else if (cmd == "cd") {
+      if (ind < 0) {cout << "bad index, try again\n"; break;}
+
+
+      bool f = false;
+      for (int i = 0 ; i < files[NOW_POS].fls.size() && !f; i++)
+        if (files[NOW_POS].fls[i] == ind) f= true;
+      if (f || files[NOW_POS].id_parent == ind) GoToFolder(ind);
+      else GoToFolder(-1);
+
+
+      }
+    else if (cmd == "del") {
+      if (ind < 0) {cout << "bad index, try again\n"; break;}
+      bool f = false;
+      for (int i = 0 ; i < files[NOW_POS].fls.size() && !f; i++)
+        if (files[NOW_POS].fls[i] == ind) f= true;
+      if (f) DeleteFile(ind);
+      else DeleteFile(-1);
+    }
+    else if (cmd == "chng") {
+      if (ind < 0) {cout << "bad index, try again\n"; break;}
+
+
+      bool f = false;
+      for (int i = 0 ; i < files[NOW_POS].fls.size() && !f; i++)
+        if (files[NOW_POS].fls[i] == ind) f= true;
+      if (f) ChangeFile(ind);
+      else ChangeFile(-1);
+      }
+    else if (cmd == "sh") {
+      if (ind < 0) {cout << "bad index, try again\n"; break;}
+
+      bool f = false;
+      for (int i = 0 ; i < files[NOW_POS].fls.size() && !f; i++)
+        if (files[NOW_POS].fls[i] == ind) f= true;
+      if (f) ShowPagesOfFile(ind);
+      else ShowPagesOfFile(-1);
+      }
+    else if (cmd == "crFld") {CreateFolder(NOW_POS);}
+    else if (cmd == "crFl") {AddFile(NOW_POS);}
+    else if (cmd == "help") {HelpPage();}
+    else if (cmd == "disp") {Display();}
+    else if (cmd == "cls") {system("clear");}
+    else if (cmd == "quit") cout << "exit\n";
+    else {cout << "unnown command\n";}
+  }
   return 0;
 }
