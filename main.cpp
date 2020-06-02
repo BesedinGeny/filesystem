@@ -86,10 +86,7 @@ bool AddFile(int index){
   map<int, MFILE > :: iterator it;
   it = files.find(index);
   it->second.fls.push_back(file_ind);
-  //MFILE p = files[index];
-  
-  
-  //p.fls.push_back(file_ind);
+
   return true;
 }
 
@@ -199,6 +196,7 @@ void DisplayFolder(int index){
 
 bool DeleteFile(int index){
   //system("clear");
+  if (!index) {cout << "root cannot be deleted\n"; return false;}
   map<int, vector<int>> :: iterator it;
   it = file_mem.find(index);
   if (it == file_mem.end()) {
@@ -356,38 +354,6 @@ void Relocate(int index, int folder){
 
 int main(){
   
-  /*bool exit = false;
-  do {
-    int ind = 0;
-    system("clear");
-    cout << "MAIN MENU:\n";
-    cout << "Free memory: " << empty_pages * Size_of_page << " from " << MS * Size_of_page << endl;
-    cout << "1. Add file\n2. Delete file\n3. Find in storage file\n4. Show status\n5. Change File\n6. Exit\n";
-    cout << "Input number of comand to continue"; 
-    int comand = -1;
-    cin >> comand;
-    switch(comand){
-      case 1:
-      AddFile();
-      break;
-      case 2:
-      cout << "Input index of file to delete: ";
-      cin >> ind;
-      DeleteFile(ind);
-      break;
-      case 3:
-      cout << "Input index of file to find: ";
-      cin >> ind;
-      ShowPagesOfFile(ind);
-      break;
-      case 4: Display();break;
-      case 5: cout << "Input index of file to change: "; cin >> ind; ChangeFile(ind); break;
-      case 6: 
-      cout << "exiting..";
-      exit = true;
-      break; 
-    } 
-  } while (!exit);*/
   system("clear");
   HelpPage();
 
